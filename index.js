@@ -37,23 +37,44 @@ app.get('/', (req, res) => {
     });
 });*/
 
+app.post('/signup', (req, res) => {
+    const usuario = {
+        user_name: req.body.user_name,
+        user_email: req.body.user_email,
+        user_password: req.body.user_password
+    };
+
+    const query = "INSERT INTO users SET ?";
+    cnx.query(query, usuario, (err) => {
+        if (err) return console.error(err.message);
+
+        res.send(usuario);
+    });
+});
+
 app.post('/login', (req, res) => {
     const query = `SELECT * FROM users WHERE user_email = '${req.body.user_email}' AND user_password = '${req.body.user_password}'`;
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
 
-        const usuario = {
-            user_id: result[0].user_id,
-            user_name: result[0].user_name,
-            user_email: result[0].user_email,
-            user_password: result[0].user_password
-        };
-
+        let usuario = {};
         if (result.length > 0) {
-            res.send(usuario);
+            usuario = {
+                user_id: result[0].user_id,
+                user_name: result[0].user_name,
+                user_email: result[0].user_email,
+                user_password: result[0].user_password
+            };
         } else {
-            res.send('No se encontró el usuario');
+            usuario = {
+                user_id: 0,
+                user_name: "",
+                user_email: "",
+                user_password: ""
+            };
         }
+
+        res.send(usuario);
     });
 });
 
@@ -72,15 +93,30 @@ app.get('/users/:user_id', (req, res) => {
             };
         } else {
             usuario = {
-                user_id: null,
-                user_name: "Usuario no encontrado",
-                user_email: null,
-                user_password: null
+                user_id: 0,
+                user_name: "",
+                user_email: "",
+                user_password: ""
             };
         }
         res.send(usuario);
     });
 });
+
+app.post('/categories/add', (req, res) => {
+    const category = {
+        category_name: req.body.category_name,
+        category_type: req.body.category_type,
+        user_id: req.body.user_id
+    };
+
+    const query = "INSERT INTO categories SET ?";
+    cnx.query(query, category, (err) => {
+        if (err) return console.error(err.message);
+
+        res.send(category);
+    });
+}); 
 
 app.get('/categories/:user_id', (req, res) => {
     const query = `SELECT * FROM categories WHERE user_id IS NULL OR user_id = ${req.params.user_id} ORDER BY user_id ASC`;
@@ -98,28 +134,43 @@ app.get('/categories/:user_id', (req, res) => {
     });
 });
 
-app.get('/categories/:category_id', (req, res) => {
-    const query = `SELECT * FROM categories WHERE category_id = ${req.params.category_id}`;
+app.get('/categories', (req, res) => {
+    console.log("category_name recibido:", req.query.category_name);
+    const query = `SELECT * FROM categories WHERE category_name LIKE ?`;
+    const body = [`%${req.query.category_name}%`];
+
+    cnx.query(query, body, (err, result) => {
+        if (err) {
+            console.log("Error completo: ", err);
+            return res.status(500).send(err.message);
+        }
+
+        const categories = {};
+
+        if (result.length > 0) {
+            categories.categoriesList = result;
+        } else {
+            categories.message = 'No se encontraron categorias';
+        }
+
+        res.send(categories);
+    });
+});
+
+app.get('/category_types', (req, res) => {
+    const query = 'SELECT DISTINCT category_type FROM categories';
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
 
-        let category;
+        const category_types = {};
+
         if (result.length > 0) {
-            category = {
-                category_id: result[0].category_id,
-                category_name: result[0].category_name,
-                category_type: result[0].category_type,
-                user_id: result[0].user_id
-            };
+            category_types.category_typesList = result;
         } else {
-            category = {
-                category_id: null,
-                category_name: "Categoría no encontrada",
-                category_type: null,
-                user_id: null
-            };
+            category_types.message = 'No se encontraron tipos de categorias';
         }
-        res.send(category);
+
+        res.send(category_types);
     });
 });
 
@@ -132,10 +183,68 @@ app.get('/transactions/:user_id', (req, res) => {
 
         if (result.length > 0) {
             transactions.transactionsList = result;
-            res.send(transactions);
         } else {
-            res.send('No se encontró transacciones');
+            transactions.message = 'No se encontraron transacciones';
         }
+        
+        res.send(transactions);
+    });
+});
+
+app.post('/transactions/add', (req, res) => {
+    const transaction = {
+        transaction_amount: req.body.transaction_amount,
+        transaction_type: req.body.transaction_type,
+        transaction_description: req.body.transaction_description,
+        transaction_date: req.body.transaction_date,
+        user_id: req.body.user_id,
+        category_id: req.body.category_id
+    };
+
+    const query = "INSERT INTO transactions SET ?";
+    cnx.query(query, transaction, (err) => {
+        if (err) return console.error(err.message);
+
+        res.send(transaction);
+    });
+}); 
+
+app.get('/transactions-search/:user_id', (req, res) => {
+    const query = `SELECT * FROM transactions WHERE transaction_description LIKE ? AND user_id = '${req.params.user_id}'`;
+    const body = [`%${req.query.transaction_description}%`];
+
+    cnx.query(query, body, (err, result) => {
+        if (err) {
+            console.log("Error completo: ", err);
+            return res.status(500).send(err.message);
+        }
+
+        const transactions = {};
+
+        if (result.length > 0) {
+            transactions.transactionsList = result;
+        } else {
+            transactions.message = 'No se encontraron transacciones';
+        }
+
+        res.send(transactions);
+    });
+});
+
+app.get('/category_transactions/:user_id', (req, res) => {
+    const query = `SELECT category_id, category_name FROM categories WHERE user_id IS NULL OR user_id = ${req.params.user_id}`;
+    cnx.query(query, (err, result) => {
+        if (err) return console.log(err.message);
+
+        const category_transactions = {};
+
+        if (result.length > 0) {
+            category_transactions.category_transactionList = result;
+        } else {
+            category_transactions.message = 'No se encontraron transacciones';
+        }
+        
+        res.send(category_transactions);
     });
 });
 
@@ -148,10 +257,11 @@ app.get('/goals/:user_id', (req, res) => {
 
         if (result.length > 0) {
             goals.goalsList = result;
-            res.send(goals);
         } else {
-            res.send('No se encontró metas');
+            goals.message = 'No se encontraron metas';
         }
+        
+        res.send(goals);
     });
 });
 
@@ -197,4 +307,29 @@ app.patch('/users/:user_id', (req, res) => {
             res.send(result);
         });
     });
-});*/
+});
+
+app.put("/usuario/actualizar/:id", (req, res) =>{
+    const {id} = req.params
+    const {usu_nombres, usu_correo} = req.body
+
+    const query = "UPDATE usuarios SET usu_nombres = '"+usu_nombres+"', usu_correo='"+usu_correo+"' WHERE usu_id="+id+";"
+    //console.log(query)
+
+    conexion.query(query,(error) =>{
+        if(error)
+            return console.error(error.message)
+        res.json("Se actualizó correctamente el usuario")
+    })    
+})
+
+app.delete("/usuario/eliminar/:id", (req, res) =>{
+    const {id} = req.params
+
+    const query = "DELETE FROM usuarios WHERE usu_id = "+id+";"
+    conexion.query(query, (error) =>{
+        if(error)
+            return console.error(error.message)
+        res.json("Se eliminó correctamente el usuario")
+    })
+})*/
