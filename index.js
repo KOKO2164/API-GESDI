@@ -25,18 +25,6 @@ cnx.connect((err) => {
     console.log('Connected to the database');
 });
 
-app.get('/', (req, res) => {
-    res.send('Hello World');
-});
-
-/*app.get('/users', (req, res) => {
-    const query = 'SELECT * FROM users';
-    cnx.query(query, (err, result) => {
-        if (err) throw err;
-        res.send(result);
-    });
-});*/
-
 app.post('/signup', (req, res) => {
     const usuario = {
         user_name: req.body.user_name,
@@ -78,7 +66,7 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.get('/users/:user_id', (req, res) => {
+/*app.get('/users/:user_id', (req, res) => {
     const query = `SELECT * FROM users WHERE user_id = ${req.params.user_id}`;
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
@@ -101,13 +89,14 @@ app.get('/users/:user_id', (req, res) => {
         }
         res.send(usuario);
     });
-});
+});*/
 
+//CATEGORIAS
 app.post('/categories/add', (req, res) => {
     const category = {
         category_name: req.body.category_name,
-        category_type: req.body.category_type,
-        user_id: req.body.user_id
+        user_id: req.body.user_id,
+        type_id: req.body.type_id
     };
 
     const query = "INSERT INTO categories SET ?";
@@ -119,7 +108,7 @@ app.post('/categories/add', (req, res) => {
 }); 
 
 app.get('/categories/:user_id', (req, res) => {
-    const query = `SELECT * FROM categories WHERE user_id IS NULL OR user_id = ${req.params.user_id} ORDER BY user_id ASC`;
+    const query = `SELECT category_id, category_name, user_id, categories.type_id, types.type_name FROM categories INNER JOIN \`types\` ON categories.type_id = types.type_id WHERE user_id IS NULL OR user_id = ${req.params.user_id} ORDER BY user_id ASC`;
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
 
@@ -127,16 +116,16 @@ app.get('/categories/:user_id', (req, res) => {
 
         if (result.length > 0) {
             categories.categoriesList = result;
-            res.send(categories);
         } else {
-            res.send('No se encontró categorias');
+            categories.message = 'No se encontraron categorias';
         }
+        
+        res.send(categories);
     });
 });
 
-app.get('/categories', (req, res) => {
-    console.log("category_name recibido:", req.query.category_name);
-    const query = `SELECT * FROM categories WHERE category_name LIKE ?`;
+app.get('/categories-search/:user_id', (req, res) => {
+    const query = `SELECT category_id, category_name, user_id, categories.type_id, types.type_name FROM categories INNER JOIN \`types\` ON categories.type_id = types.type_id WHERE category_name LIKE ? AND (user_id IS NULL OR user_id = '${req.params.user_id}') ORDER BY user_id ASC`;
     const body = [`%${req.query.category_name}%`];
 
     cnx.query(query, body, (err, result) => {
@@ -157,22 +146,42 @@ app.get('/categories', (req, res) => {
     });
 });
 
-app.get('/category_types', (req, res) => {
-    const query = 'SELECT DISTINCT category_type FROM categories';
+//TIPOS
+app.get('/types', (req, res) => {
+    const query = 'SELECT * FROM types';
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
 
-        const category_types = {};
+        const types = {};
 
         if (result.length > 0) {
-            category_types.category_typesList = result;
+            types.typesList = result;
         } else {
-            category_types.message = 'No se encontraron tipos de categorias';
+            types.message = 'No se encontraron tipos de categorias';
         }
 
-        res.send(category_types);
+        res.send(types);
     });
 });
+
+//TRANSACCIONES
+app.post('/transactions/add', (req, res) => {
+    const transaction = {
+        transaction_amount: req.body.transaction_amount,
+        transaction_description: req.body.transaction_description,
+        transaction_date: req.body.transaction_date,
+        user_id: req.body.user_id,
+        category_id: req.body.category_id,
+        type_id: req.body.type_id
+    };
+
+    const query = "INSERT INTO transactions SET ?";
+    cnx.query(query, transaction, (err) => {
+        if (err) return console.error(err.message);
+
+        res.send(transaction);
+    });
+}); 
 
 app.get('/transactions/:user_id', (req, res) => {
     const query = `SELECT * FROM transactions WHERE user_id = ${req.params.user_id}`;
@@ -190,24 +199,6 @@ app.get('/transactions/:user_id', (req, res) => {
         res.send(transactions);
     });
 });
-
-app.post('/transactions/add', (req, res) => {
-    const transaction = {
-        transaction_amount: req.body.transaction_amount,
-        transaction_type: req.body.transaction_type,
-        transaction_description: req.body.transaction_description,
-        transaction_date: req.body.transaction_date,
-        user_id: req.body.user_id,
-        category_id: req.body.category_id
-    };
-
-    const query = "INSERT INTO transactions SET ?";
-    cnx.query(query, transaction, (err) => {
-        if (err) return console.error(err.message);
-
-        res.send(transaction);
-    });
-}); 
 
 app.get('/transactions-search/:user_id', (req, res) => {
     const query = `SELECT * FROM transactions WHERE transaction_description LIKE ? AND user_id = '${req.params.user_id}'`;
@@ -231,7 +222,7 @@ app.get('/transactions-search/:user_id', (req, res) => {
     });
 });
 
-app.get('/category_transactions/:user_id', (req, res) => {
+/*app.get('/category_transactions/:user_id', (req, res) => {
     const query = `SELECT category_id, category_name FROM categories WHERE user_id IS NULL OR user_id = ${req.params.user_id}`;
     cnx.query(query, (err, result) => {
         if (err) return console.log(err.message);
@@ -245,6 +236,24 @@ app.get('/category_transactions/:user_id', (req, res) => {
         }
         
         res.send(category_transactions);
+    });
+});*/
+
+//METAS
+app.post('/goals/add', (req, res) => {
+    const goal = {
+        goal_name: req.body.goal_name,
+        goal_target_amount: req.body.goal_target_amount,
+        goal_actual_amount: req.body.goal_actual_amount,
+        goal_deadline: req.body.goal_deadline,
+        user_id: req.body.user_id
+    };
+
+    const query = "INSERT INTO goals SET ?";
+    cnx.query(query, goal, (err) => {
+        if (err) return console.error(err.message);
+
+        res.send(goal);
     });
 });
 
@@ -261,6 +270,28 @@ app.get('/goals/:user_id', (req, res) => {
             goals.message = 'No se encontraron metas';
         }
         
+        res.send(goals);
+    });
+});
+
+app.get('/goals-search/:user_id', (req, res) => {   
+    const query = `SELECT * FROM goals WHERE goal_name LIKE ? AND user_id = '${req.params.user_id}'`;
+    const body = [`%${req.query.goal_name}%`];
+
+    cnx.query(query, body, (err, result) => {
+        if (err) {
+            console.log("Error completo: ", err);
+            return res.status(500).send(err.message);
+        }
+
+        const goals = {};
+
+        if (result.length > 0) {
+            goals.goalsList = result;
+        } else {
+            goals.message = 'No se encontraron metas';
+        }
+
         res.send(goals);
     });
 });
