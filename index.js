@@ -313,7 +313,21 @@ app.post("/budgets/add", (req, res) => {
 });
 
 app.get("/budgets/:user_id", (req, res) => {
-  const query = `SELECT budget_id, budget_name, budget_amount, budget_month, budget_year, budget_is_total, budgets.category_id, categories.category_name, budgets.user_id FROM budgets LEFT JOIN \`categories\` ON budgets.category_id = categories.category_id WHERE budgets.user_id IS NULL OR budgets.user_id = ${req.params.user_id}`;
+  const query = `
+    SELECT 
+      budget_id, 
+      budget_name, 
+      budget_amount, 
+      budget_month, 
+      budget_year, 
+      budget_is_total, 
+      budgets.category_id, 
+      categories.category_name, 
+      budgets.user_id 
+    FROM budgets 
+    LEFT JOIN \`categories\` 
+    ON budgets.category_id = categories.category_id 
+    WHERE budgets.user_id = ${req.params.user_id}`;
   cnx.query(query, (err, result) => {
     if (err) return console.log(err.message);
 
@@ -330,7 +344,21 @@ app.get("/budgets/:user_id", (req, res) => {
 });
 
 app.get("/budgets-search/:user_id", (req, res) => {
-  const query = `SELECT * FROM budgets WHERE budget_name LIKE ? AND user_id = '${req.params.user_id}'`;
+  const query = `
+    SELECT 
+      budget_id, 
+      budget_name, 
+      budget_amount, 
+      budget_month, 
+      budget_year, 
+      budget_is_total, 
+      budgets.category_id, 
+      categories.category_name, 
+      budgets.user_id 
+    FROM budgets 
+    LEFT JOIN \`categories\` 
+    ON budgets.category_id = categories.category_id 
+    WHERE budget_name LIKE ? AND budgets.user_id = '${req.params.user_id}'`;
   const body = [`%${req.query.budget_name}%`];
 
   cnx.query(query, body, (err, result) => {
