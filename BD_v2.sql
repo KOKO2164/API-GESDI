@@ -1,4 +1,4 @@
-#DROP DATABASE gesdi;
+CREATE DATABASE gesdi;
 
 -- -----------------------------------------------------
 -- Schema gesdi
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`users` (
   `user_email` VARCHAR(255) NOT NULL,
   `user_password` VARCHAR(64) NOT NULL, -- SHA-256
   PRIMARY KEY (`user_id`),
-  UNIQUE INDEX `email_UNIQUE` (`user_email` ASC) VISIBLE)
+  UNIQUE INDEX `email_UNIQUE` (`user_email` ASC))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4;
 
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`categories` (
   `user_id` INT NULL DEFAULT NULL,
   `type_id` INT NOT NULL,
   PRIMARY KEY (`category_id`),
-  INDEX `fk_categories_users_idx` (`user_id` ASC) VISIBLE,
-  INDEX `fk_categories_types1_idx` (`type_id` ASC) VISIBLE,
+  INDEX `fk_categories_users_idx` (`user_id` ASC),
+  INDEX `fk_categories_types1_idx` (`type_id` ASC),
   CONSTRAINT `fk_categories_users`
     FOREIGN KEY (`user_id`)
     REFERENCES `gesdi`.`users` (`user_id`),
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`goals` (
   `goal_deadline` DATE NOT NULL,
   `user_id` INT NOT NULL,
   PRIMARY KEY (`goal_id`),
-  INDEX `fk_goals_users1_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_goals_users1_idx` (`user_id` ASC),
   CONSTRAINT `fk_goals_users1`
     FOREIGN KEY (`user_id`)
     REFERENCES `gesdi`.`users` (`user_id`))
@@ -84,9 +84,9 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`transactions` (
   `category_id` INT NULL,
   `type_id` INT NOT NULL,
   PRIMARY KEY (`transaction_id`),
-  INDEX `fk_transactions_users1_idx` (`user_id` ASC) VISIBLE,
-  INDEX `fk_transactions_categories1_idx` (`category_id` ASC) VISIBLE,
-  INDEX `fk_transactions_types1_idx` (`type_id` ASC) VISIBLE,
+  INDEX `fk_transactions_users1_idx` (`user_id` ASC),
+  INDEX `fk_transactions_categories1_idx` (`category_id` ASC),
+  INDEX `fk_transactions_types1_idx` (`type_id` ASC),
   CONSTRAINT `fk_transactions_categories1`
     FOREIGN KEY (`category_id`)
     REFERENCES `gesdi`.`categories` (`category_id`),
@@ -115,8 +115,8 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`budgets` (
   `category_id` INT NULL DEFAULT NULL,
   `user_id` INT NOT NULL,
   PRIMARY KEY (`budget_id`),
-  INDEX `fk_budgets_categories1_idx` (`category_id` ASC) VISIBLE,
-  INDEX `fk_budgets_users1_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_budgets_categories1_idx` (`category_id` ASC),
+  INDEX `fk_budgets_users1_idx` (`user_id` ASC),
   CONSTRAINT `fk_budgets_categories1`
     FOREIGN KEY (`category_id`)
     REFERENCES `gesdi`.`categories` (`category_id`)
@@ -125,51 +125,6 @@ CREATE TABLE IF NOT EXISTS `gesdi`.`budgets` (
   CONSTRAINT `fk_budgets_users1`
     FOREIGN KEY (`user_id`)
     REFERENCES `gesdi`.`users` (`user_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4;
-
-
--- -----------------------------------------------------
--- Table `gesdi`.`bank_accounts`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gesdi`.`bank_accounts` (
-  `bank_account_id` INT NOT NULL AUTO_INCREMENT,
-  `bank_account_number` VARCHAR(45) NOT NULL,
-  `bank_account_name` VARCHAR(45) NOT NULL,
-  `user_id` INT NOT NULL,
-  PRIMARY KEY (`bank_account_id`),
-  INDEX `fk_bank_accounts_users1_idx` (`user_id` ASC) VISIBLE,
-  CONSTRAINT `fk_bank_accounts_users1`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `gesdi`.`users` (`user_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4;
-
-
--- -----------------------------------------------------
--- Table `gesdi`.`cards`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gesdi`.`cards` (
-  `card_id` INT NOT NULL AUTO_INCREMENT,
-  `card_number` VARCHAR(45) NOT NULL,
-  `card_type` VARCHAR(45) NOT NULL,
-  `user_id` INT NOT NULL,
-  `bank_account_id` INT NOT NULL,
-  PRIMARY KEY (`card_id`),
-  INDEX `fk_cards_users1_idx` (`user_id` ASC) VISIBLE,
-  INDEX `fk_cards_bank_accounts1_idx` (`bank_account_id` ASC) VISIBLE,
-  CONSTRAINT `fk_cards_users1`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `gesdi`.`users` (`user_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_cards_bank_accounts1`
-    FOREIGN KEY (`bank_account_id`)
-    REFERENCES `gesdi`.`bank_accounts` (`bank_account_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
